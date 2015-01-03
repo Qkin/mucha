@@ -74,7 +74,6 @@ public class MainActivity extends SimpleBaseGameActivity implements
 	private static final int CAMERA_HEIGHT = 480;
 
 	private static final int SERVER_PORT = 4444;
-	private static final int SERVER_PORT2 = 44445;
 
 	public static final short FLAG_MESSAGE_SERVER_ADD_FACE = 1;
 	public static final short FLAG_MESSAGE_SERVER_MOVE_FACE = FLAG_MESSAGE_SERVER_ADD_FACE + 1;
