@@ -126,6 +126,7 @@ public class MainActivity extends SimpleBaseGameActivity implements
 	private void initMessagePool() {
 		this.mMessagePool.registerMessage(FLAG_MESSAGE_SERVER_ADD_FACE, AddFaceServerMessage.class);
 		this.mMessagePool.registerMessage(FLAG_MESSAGE_SERVER_MOVE_FACE, MoveFaceServerMessage.class);
+		//this.mMessagePool.registerMessage(FLAG_MESSAGE_SERVER_STOP_FLY, StopFlyServerMessage.class);
 	}
 
 	@Override
@@ -187,17 +188,18 @@ public class MainActivity extends SimpleBaseGameActivity implements
 				@Override
 				public boolean onAreaTouched(final TouchEvent pSceneTouchEvent, final ITouchArea pTouchArea, final float pTouchAreaLocalX, final float pTouchAreaLocalY) {
 					if(MainActivity.this.mSocketServer != null) {
-						//try {
-							//final Sprite fly = (Sprite)pTouchArea;
-							//final Integer faceID = (Integer)fly.getUserData();
+					/*	try {
+							final Sprite fly = (Sprite)pTouchArea;
+							final Integer faceID = (Integer)fly.getUserData();
+							float x = fly.getX();
+							float y = fly.getY();
 		
-							/*final MoveFaceServerMessage moveFaceServerMessage = (MoveFaceServerMessage) MainActivity.this.mMessagePool.obtainMessage(FLAG_MESSAGE_SERVER_MOVE_FACE);
-							moveFaceServerMessage.set(faceID, pSceneTouchEvent.getX(), pSceneTouchEvent.getY());
-		
-							MainActivity.this.mSocketServer.sendBroadcastServerMessage(moveFaceServerMessage);
-		
-							MainActivity.this.mMessagePool.recycleMessage(moveFaceServerMessage);*/
-						/*} catch (final IOException e) {
+							final StopFlyServerMessage stopFlyServerMessage = (StopFlyServerMessage) MainActivity.this.mMessagePool.obtainMessage(FLAG_MESSAGE_SERVER_STOP_FLY);
+							stopFlyServerMessage.set(faceID, x, y);
+
+							MainActivity.this.mSocketServer.sendBroadcastServerMessage(stopFlyServerMessage);
+							MainActivity.this.mMessagePool.recycleMessage(stopFlyServerMessage);
+						} catch (final IOException e) {
 							Debug.e(e);
 							return false;
 						}*/
@@ -217,6 +219,9 @@ public class MainActivity extends SimpleBaseGameActivity implements
 						
 						scene.attachChild(face);
 						face.setZIndex(-1);
+						
+						
+						
 					/*	final Fly deadFly = new Fly(0, 0, resources.mDeadFlyTextureRegion, MainActivity.this.getVertexBufferObjectManager(), MainActivity.this.mFaceIDCounter++);
 						deadFly.setCamera(CAMERA_WIDTH, CAMERA_HEIGHT);
 						deadFly.setPosition(pSceneTouchEvent.getX() - deadFly.getWidth() * 0.5f, pSceneTouchEvent.getY() - deadFly.getHeight() * 0.5f);
@@ -381,10 +386,11 @@ public class MainActivity extends SimpleBaseGameActivity implements
 		this.mFaces.remove(pID);
 		fly.detachSelf();
 		
-		final Fly deadFly = new Fly(0, 0, resources.mDeadFlyTextureRegion, this.getVertexBufferObjectManager(), MainActivity.this.mFaceIDCounter++);
-		deadFly.setCamera(CAMERA_WIDTH, CAMERA_HEIGHT);
-		deadFly.setPosition(pX - deadFly.getWidth() * 0.5f, pY - deadFly.getHeight() * 0.5f);
+		final Sprite deadFly = new Sprite(0, 0, resources.mDeadFlyTextureRegion, MainActivity.this.getVertexBufferObjectManager());
+		deadFly.setPosition(pX, pY);
 		scene.attachChild(deadFly);
+		deadFly.setZIndex(-1);
+		
 		//final Fly face = this.mFaces.get(pID);
 		// CopyOfMainActivity.this.toast("tekst");
 		//face.killTheFly();
@@ -427,15 +433,12 @@ public class MainActivity extends SimpleBaseGameActivity implements
                         //clientConnector.registerClientMessage(5, pClientMessageClass);
                         clientConnector.registerClientMessage(FLAG_MESSAGE_CLIENT_DRAWLINE, DrawLineClientMessage.class, new IClientMessageHandler<SocketConnection>() {
 								@Override
-								public void onHandleMessage(
-										ClientConnector<SocketConnection> pClientConnector,
-										IClientMessage pClientMessage)
-										throws IOException {
-									final DrawLineClientMessage drawLineClientMessage = (DrawLineClientMessage)pClientMessage;
-									MainActivity.this.addFace(drawLineClientMessage.mID, drawLineClientMessage.mX, drawLineClientMessage.mY);
-									
-								}
-                        });
+								public void onHandleMessage(ClientConnector<SocketConnection> pClientConnector,IClientMessage pClientMessage)
+									throws IOException {
+										final DrawLineClientMessage drawLineClientMessage = (DrawLineClientMessage)pClientMessage;
+										MainActivity.this.addFace(drawLineClientMessage.mID, drawLineClientMessage.mX, drawLineClientMessage.mY);
+									}
+		                        });
                         return clientConnector;
                 }
         };
@@ -479,6 +482,14 @@ public class MainActivity extends SimpleBaseGameActivity implements
 					MainActivity.this.moveFace(moveFaceServerMessage.mID, moveFaceServerMessage.mX, moveFaceServerMessage.mY);
 				}
 			});
+			
+			/*this.mServerConnector.registerServerMessage(FLAG_MESSAGE_SERVER_STOP_FLY, StopFlyServerMessage.class, new IServerMessageHandler<SocketConnection>() {
+				@Override
+				public void onHandleMessage(final ServerConnector<SocketConnection> pServerConnector, final IServerMessage pServerMessage) throws IOException {
+					final StopFlyServerMessage stopFlyServerMessage = (StopFlyServerMessage)pServerMessage;
+					MainActivity.this.stopFly(stopFlyServerMessage.mID, stopFlyServerMessage.mX, stopFlyServerMessage.mY);
+				}
+			});*/
 
 			this.mServerConnector.getConnection().start();
 		} catch (final Throwable t) {
@@ -627,7 +638,49 @@ public class MainActivity extends SimpleBaseGameActivity implements
 			pDataOutputStream.writeFloat(this.mY);
 		}
 	}
+	
+	public static class StopFlyServerMessage extends ServerMessage {
+		private int mID;
+		private float mX;
+		private float mY;
 
+		public StopFlyServerMessage() {
+
+		}
+
+		public StopFlyServerMessage(final int pID, final float pX, final float pY) {
+			this.mID = pID;
+			this.mX = pX;
+			this.mY = pY;
+		}
+
+		public void set(final int pID, final float pX, final float pY) {
+			this.mID = pID;
+			this.mX = pX;
+			this.mY = pY;
+		}
+
+		@Override
+		public short getFlag() {
+			return FLAG_MESSAGE_SERVER_STOP_FLY;
+		}
+
+		@Override
+		protected void onReadTransmissionData(final DataInputStream pDataInputStream) throws IOException {
+			this.mID = pDataInputStream.readInt();
+			this.mX = pDataInputStream.readFloat();
+			this.mY = pDataInputStream.readFloat();
+		}
+
+		@Override
+		protected void onWriteTransmissionData(final DataOutputStream pDataOutputStream) throws IOException {
+			pDataOutputStream.writeInt(this.mID);
+			pDataOutputStream.writeFloat(this.mX);
+			pDataOutputStream.writeFloat(this.mY);
+		}
+	}
+	
+	
 	private class ExampleServerConnectorListener implements ISocketConnectionServerConnectorListener {
 		@Override
 		public void onStarted(final ServerConnector<SocketConnection> pConnector) {
