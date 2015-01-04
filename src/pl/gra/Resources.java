@@ -45,18 +45,11 @@ public class Resources {
 	public void loadGameGraphics(SimpleBaseGameActivity activity) {
 		BitmapTextureAtlasTextureRegionFactory.setAssetBasePath("gfx/");
 
-		this.mFlyTextureAtlas = new BitmapTextureAtlas(
-				activity.getTextureManager(), 128, 64, TextureOptions.BILINEAR);
-		this.mFlyTextureRegion = BitmapTextureAtlasTextureRegionFactory
-				.createTiledFromAsset(this.mFlyTextureAtlas, activity,
-						"mucha.png", 0, 0, 2, 1);
+		this.mFlyTextureAtlas = new BitmapTextureAtlas(activity.getTextureManager(), 128, 64, TextureOptions.BILINEAR);
+		this.mFlyTextureRegion = BitmapTextureAtlasTextureRegionFactory.createTiledFromAsset(this.mFlyTextureAtlas, activity,"mucha.png", 0, 0, 2, 1);
 		this.mFlyTextureAtlas.load();
-
-		this.mDeadFlyTextureAtlas = new BitmapTextureAtlas(
-				activity.getTextureManager(), 64, 32, TextureOptions.BILINEAR);
-		this.mDeadFlyTextureRegion = BitmapTextureAtlasTextureRegionFactory
-				.createTiledFromAsset(mDeadFlyTextureAtlas, activity,
-						"muchaDead.png", 0, 0, 1, 1);
+		this.mDeadFlyTextureAtlas = new BitmapTextureAtlas(activity.getTextureManager(), 64, 32, TextureOptions.BILINEAR);
+		this.mDeadFlyTextureRegion = BitmapTextureAtlasTextureRegionFactory.createTiledFromAsset(mDeadFlyTextureAtlas, activity,"muchaDead.png", 0, 0, 1, 1);
 		this.mDeadFlyTextureAtlas.load();
 	}
 
@@ -67,11 +60,9 @@ public class Resources {
 			MusicManager musicManager) {
 		MusicFactory.setAssetBasePath("mfx/");
 		try {
-			this.mMusic = MusicFactory.createMusicFromAsset(musicManager,
-					activity, "mucha_fly.wav");
+			this.mMusic = MusicFactory.createMusicFromAsset(musicManager,activity, "mucha_fly.wav");
 			this.mMusic.setLooping(true);
-			this.mMusicFlyKill = MusicFactory.createMusicFromAsset(
-					musicManager, activity, "mucha_kill.wav");
+			this.mMusicFlyKill = MusicFactory.createMusicFromAsset(musicManager, activity, "mucha_kill.wav");
 		} catch (final IOException e) {
 			Debug.e(e);
 		}
@@ -82,12 +73,8 @@ public class Resources {
 	 */
 	public void loadFonts(SimpleBaseGameActivity activity) {
 		FontFactory.setAssetBasePath("font/");
-		final ITexture mainFontTexture = new BitmapTextureAtlas(
-				activity.getTextureManager(), 256, 256,
-				TextureOptions.BILINEAR_PREMULTIPLYALPHA);
-		font = FontFactory.createStrokeFromAsset(activity.getFontManager(),
-				mainFontTexture, activity.getAssets(), "font.ttf", 30, true,
-				Color.WHITE, 2, Color.BLACK);
+		final ITexture mainFontTexture = new BitmapTextureAtlas(activity.getTextureManager(), 256, 256,TextureOptions.BILINEAR_PREMULTIPLYALPHA);
+		font = FontFactory.createStrokeFromAsset(activity.getFontManager(),mainFontTexture, activity.getAssets(), "font.ttf", 30, true, Color.WHITE, 2, Color.BLACK);
 		font.load();
 	}
 }

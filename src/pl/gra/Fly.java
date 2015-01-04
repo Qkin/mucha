@@ -15,7 +15,7 @@ import android.util.Log;
 import pl.gra.MainActivity.MoveFaceServerMessage;
 
 /**
- * Klasa obsuguj¹ca ruch muchy
+ * Klasa obsugujÄ…ca ruch muchy
  * 
  * @author Kamil Kunikowski
  * @author Krzysztof Longa
@@ -23,22 +23,22 @@ import pl.gra.MainActivity.MoveFaceServerMessage;
  */
 public class Fly extends AnimatedSprite {
 	public final PhysicsHandler mPhysicsHandler;
-	// prêdkoœæ poruszania siê muchy ( gdy wartoœæ ujemna, prêdkoœæ przybiera przeciwny zwrot)
-	public float velocity = 50.0f;
+	// prÄ™dkoÅ›Ä‡ poruszania siÄ™ muchy ( gdy wartoÅ›Ä‡ ujemna, prÄ™dkoÅ›Ä‡ przybiera przeciwny zwrot)
+	public float velocity = 150.0f;
 	//pozycje startowe
 	public int startPosX = 0;
 	public int startPosY = 0;
 
-	// szerokoœæ ekranu
+	// szerokoÅ›Ä‡ ekranu
 	private int cameraWidth = 720;
-	// wysokoœæ ekranu
+	// wysokoÅ›Ä‡ ekranu
 	private int cameraHeight = 480;
-	// zmienna do pêtli generuj¹cej ruch muchy
+	// zmienna do pÄ™tli generujÄ…cej ruch muchy
 	private int updateCounter = 0;
-	// zwrot na osi X. Przyjmuje wartoœci 1(zgodnie z osi¹ X) oraz -1
+	// zwrot na osi X. Przyjmuje wartoÅ›ci 1(zgodnie z osiÄ… X) oraz -1
 	// (przeciwnie do osi X)
 	private byte xTurn = 1;
-	// zwrot na osi Y. Przyjmuje wartoœci 1(zgodnie z osi¹ Y) oraz -1
+	// zwrot na osi Y. Przyjmuje wartoÅ›ci 1(zgodnie z osiÄ… Y) oraz -1
 	// (przeciwnie do osi Y)
 	private byte yTurn = 1;
 	// Czy jest w trakcie lotu.
@@ -47,19 +47,19 @@ public class Fly extends AnimatedSprite {
 	private int pID;
 
 
-	// dŸwiêk lotu muchy
+	// dÅºwiÄ™k lotu muchy
 	private Music flyNoise;
 	private Music killFlyNoise;
 	
 	private MainActivity activity;
 	/**
 	 * Konstruktor
-	 * @param pX - pocz¹tkowa wartoœæ X muchy
-	 * @param pY - pocz¹tkowa wartoœæ Y muchy
+	 * @param pX - poczÄ…tkowa wartoÅ›Ä‡ X muchy
+	 * @param pY - poczÄ…tkowa wartoÅ›Ä‡ Y muchy
 	 * @param pTextureRegion - region grafiki muchy
 	 * @param pVertexBufferObjectManager
 	 * @param pID - ID obiektu
-	 * @param pMusic - dŸwiêk poruszaj¹cego siê obiektu
+	 * @param pMusic - dÅºwiÄ™k poruszajÄ…cego siÄ™ obiektu
 	 */
 	public Fly(final float pX, final float pY, final TiledTextureRegion pTextureRegion,
 			final VertexBufferObjectManager pVertexBufferObjectManager, int pID/*, Music pMusic*/) {
@@ -70,12 +70,12 @@ public class Fly extends AnimatedSprite {
 		this.pID = pID;
 		// this.flyNoise = pMusic;
 		// this.flyNoise.play();
-		// jak czêsto (w ms) maj¹ zmieniaæ siê animowane obrazki
+		// jak czÄ™sto (w ms) majÄ… zmieniaÄ‡ siÄ™ animowane obrazki
 		this.animate(50);
 	}
 
 	/**
-	 * metoda ustawia szerokoœæ i wysokoœæ ekranu
+	 * metoda ustawia szerokoÅ›Ä‡ i wysokoÅ›Ä‡ ekranu
 	 */
 	public void setCamera(int cameraWidth, int cameraHeight) {
 		this.cameraWidth = cameraWidth;
@@ -83,7 +83,7 @@ public class Fly extends AnimatedSprite {
 	}
 	
 	/**
-	 * metoda ustawia wartoœæ pocz¹tkow¹ muchy
+	 * metoda ustawia wartoÅ›Ä‡ poczÄ…tkowÄ… muchy
 	 */
 	public void setStartPosition(int x, int y) {
 		this.startPosX = x;
@@ -91,21 +91,21 @@ public class Fly extends AnimatedSprite {
 	}
 
 	/**
-	 * metoda ustawia prêdkoœæ obiektu
+	 * metoda ustawia prÄ™dkoÅ›Ä‡ obiektu
 	 */
 	public void setSpeed(float speed) {
 		this.velocity = speed;
 	}
 
 	/**
-	 * metoda zwraca aktualn¹ prêdkoœæ obiektu
+	 * metoda zwraca aktualnÄ… prÄ™dkoÅ›Ä‡ obiektu
 	 */
 	public float getSpeed() {
 		return this.velocity;
 	}
 
 	/**
-	 * metoda usatwia dŸwiêk zabicia muchy
+	 * metoda usatwia dÅºwiÄ™k zabicia muchy
 	 */
 	public void setKillFlyNoise(Music noise) {
 		this.killFlyNoise = noise;
@@ -115,7 +115,7 @@ public class Fly extends AnimatedSprite {
 	 * Metoda zatrzymuje ruchy muchy
 	 */
 	public void stopFlying() {
-		this.isFlying = false;
+		//this.isFlying = false;
 		//this.flyNoise.stop();
 		this.setSpeed(0);
 	}
@@ -125,12 +125,12 @@ public class Fly extends AnimatedSprite {
 	}
 
 	/**
-	 * metoda odpowiedzialna za zabicie muchy, czyli zatrzymanie jej ruchów i
-	 * wygenerowanie dŸwiêku zabicia.
+	 * metoda odpowiedzialna za zabicie muchy, czyli zatrzymanie jej ruchÃ³w i
+	 * wygenerowanie dÅºwiÄ™ku zabicia.
 	 */
 	public void killTheFly() {
 		this.stopFlying();
-		this.killFlyNoise.play();
+		//this.killFlyNoise.play();
 	}
 
 	/**
@@ -145,30 +145,29 @@ public class Fly extends AnimatedSprite {
 		this.activity = activity;
 	}
 	
-	//Losuje krawêdŸ ekranu z której ma startowaæ mucha i zapisuje wspó³rzêdne pocz¹tkowe
+	//Losuje krawÄ™dÅº ekranu z ktÃ³rej ma startowaÄ‡ mucha i zapisuje wspÃ³Å‚rzÄ™dne poczÄ…tkowe
 	public void randomStartPosition(){
 		this.startPosX = 0; 
 		this.startPosY = 0;
 		Random rand = new Random(); 
 		int direction = rand.nextInt(4);
 		switch(direction) { 
-			case 0: //lewa krawêdŸ 
+			case 0: //lewa krawÄ™dÅº 
 				this.startPosY = rand.nextInt(this.cameraHeight); 
 			break; 
-			case 1: // górna krawêdŸ 
+			case 1: // gÃ³rna krawÄ™dÅº 
 				this.startPosX = rand.nextInt(this.cameraWidth); 
 			break; 
-			case 2: // prawa krawêdŸ 
+			case 2: // prawa krawÄ™dÅº 
 				this.startPosY = rand.nextInt(this.cameraHeight);
 				this.startPosX = this.cameraWidth; 
 			break; 
-			case 3: //dolna krawêdŸ 
+			case 3: //dolna krawÄ™dÅº 
 				this.startPosX = rand.nextInt(this.cameraWidth); this.startPosY = this.cameraHeight; 
 			break; 
 		}
 	}
 	
-
 	@Override
 	protected void onManagedUpdate(final float pSecondsElapsed) {
 		if (this.isFlying() == true) {
@@ -177,11 +176,11 @@ public class Fly extends AnimatedSprite {
 				if (updateCounter > 10) {
 					updateCounter = 0;
 
-					// losujemy czy zwrot ma byæ zgodny czy przeciwny do
+					// losujemy czy zwrot ma byc zgodny czy przeciwny do
 					// osi.
 					Random rand = new Random();
 					this.xTurn = (byte) rand.nextInt(2);
-					this.xTurn = (byte) rand.nextInt(2);
+					this.yTurn = (byte) rand.nextInt(2);
 					if (this.xTurn == 0) {
 						this.xTurn = -1;
 					}
@@ -193,7 +192,7 @@ public class Fly extends AnimatedSprite {
 				updateCounter++;
 
 				// ////////////////////////////////////////////////////////////////////////
-				// jeœli obiekt chce przejœæ poza granice ekranu to
+				// jesli obiekt chce przejsc poza granice ekranu to
 				// zmieniamy jego zwrot
 				// ////////////////////////////////////////////////////////////////////////
 				if (this.mX < 0) {
@@ -223,21 +222,20 @@ public class Fly extends AnimatedSprite {
 	}
 	
 	/**
-	 * Metoda odpowiedzialna za poruszanie siê muchy. Wykorzystywana zmienna
-	 * VELOCITY posiada wartoœæ prêdkoœci oraz zwrot. Jeœli jest dodatnia to
-	 * zwrot zgodnie z osi¹, jeœli ujemna to przeciwny
+	 * Metoda odpowiedzialna za poruszanie siÃª muchy. Wykorzystywana zmienna
+	 * VELOCITY posiada wartoÅ“Ã¦ prÃªdkoÅ“ci oraz zwrot. JeÅ“li jest dodatnia to
+	 * zwrot zgodnie z osiÂ¹, jeÅ“li ujemna to przeciwny
 	 */
-	/*@Override
+	/*
+	@Override
 	protected void onManagedUpdate(final float pSecondsElapsed) {
-
 		this.startFlying();
 		if (this.isFlying) {
-			// Warunek potrzebny, aby kierunek ruchy muchy nie by³ zmieniany co
-			// ka¿d¹ aktualizacjê, tylko co konkretn¹ liczbê uaktualnieñ
+			// Warunek potrzebny, aby kierunek ruchy muchy nie byÂ³ zmieniany co
+			// kaÂ¿dÂ¹ aktualizacjÃª, tylko co konkretnÂ¹ liczbÃª uaktualnieÃ±
 			if (updateCounter > 10) {
 				updateCounter = 0;
-
-				// losujemy czy zwrot ma byæ zgodny czy przeciwny do osi.
+				// losujemy czy zwrot ma byÃ¦ zgodny czy przeciwny do osi.
 				Random rand = new Random();
 				xTurn = (byte) rand.nextInt(2);
 				xTurn = (byte) rand.nextInt(2);
@@ -248,11 +246,9 @@ public class Fly extends AnimatedSprite {
 					yTurn = -1;
 				}
 			}
-
 			updateCounter++;
-
 			// ////////////////////////////////////////////////////////////////////////
-			// jeœli obiekt chce przejœæ poza granice ekranu to zmieniamy jego
+			// jeÅ“li obiekt chce przejÅ“Ã¦ poza granice ekranu to zmieniamy jego
 			// zwrot
 			// ////////////////////////////////////////////////////////////////////////
 			if (this.mX < 0) {
@@ -260,23 +256,21 @@ public class Fly extends AnimatedSprite {
 			} else if (this.mX + this.getWidth() > this.cameraWidth) {
 				xTurn = -1;
 			}
-
 			if (this.mY < 0) {
 				yTurn = 1;
 			} else if (this.mY + this.getHeight() > this.cameraHeight) {
 				yTurn = -1;
 			}
 			// ////////////////////////////////////////////////////////////////////////
-
-			// Ustawiamy prêdkoœæ i zwrot dla ruchu muchy na osiach X oraz Y
+			// Ustawiamy prÃªdkoÅ“Ã¦ i zwrot dla ruchu muchy na osiach X oraz Y
 			this.mPhysicsHandler.setVelocityX(xTurn * this.velocity);
 			this.mPhysicsHandler.setVelocityY(yTurn * this.velocity);
 		} else {
 			this.mPhysicsHandler.setVelocityX(0);
 			this.mPhysicsHandler.setVelocityY(0);
 		}
-
 		super.onManagedUpdate(pSecondsElapsed);
-	}*/
+	}
+	*/
 
 }
