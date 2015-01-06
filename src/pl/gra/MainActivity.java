@@ -55,6 +55,9 @@ import org.andengine.ui.activity.SimpleBaseGameActivity;
 import org.andengine.util.HorizontalAlign;
 import org.andengine.util.debug.Debug;
 
+import pl.gra.CopyOfMainActivity.AddFaceServerMessage;
+import pl.gra.CopyOfMainActivity.MyTimer;
+
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.DialogInterface;
@@ -98,6 +101,7 @@ public class MainActivity extends SimpleBaseGameActivity implements
 
 	private int mFaceIDCounter;
 	private final SparseArray<Fly> mFaces = new SparseArray<Fly>();
+	private final SparseArray<Timer> timersList = new SparseArray<Timer>();
 
 	private String mServerIP = LOCALHOST_IP;
 	public SocketServer<SocketConnectionClientConnector> mSocketServer;
@@ -177,6 +181,9 @@ public class MainActivity extends SimpleBaseGameActivity implements
 								MainActivity.this.mSocketServer.sendBroadcastServerMessage(addFaceServerMessage);
 								MainActivity.this.mMessagePool.recycleMessage(addFaceServerMessage);
 								
+								Timer timer = new Timer();
+							    timer.schedule(new MoveFlyTimer(MainActivity.this.mFaceIDCounter-1), 0, 300);
+							    MainActivity.this.timersList.put(MainActivity.this.mFaceIDCounter-1, timer);
 							} catch (final IOException e) {
 								Debug.e(e);
 							}
@@ -248,7 +255,32 @@ public class MainActivity extends SimpleBaseGameActivity implements
 
 		return scene;
 	}
-
+	
+	class MoveFlyTimer extends TimerTask {
+		private int faceId;
+		
+		MoveFlyTimer(int faceId) {
+			this.faceId = faceId;
+		}
+			@Override
+			public void run() {
+				if (MainActivity.this.mSocketServer != null) {
+					try {
+						byte[] xyTurns = randomXYTurn();
+						final MoveFaceServerMessage moveFaceServerMessage = (MoveFaceServerMessage) MainActivity.this.mMessagePool.obtainMessage(FLAG_MESSAGE_SERVER_MOVE_FACE);
+						moveFaceServerMessage.set(this.faceId, xyTurns[0], xyTurns[1]);				
+						Log.v("xT", Byte.toString(xyTurns[0]));
+						Log.v("yT", Byte.toString(xyTurns[1]));
+						Log.v("yT", Integer.toString(this.faceId));
+						MainActivity.this.mSocketServer.sendBroadcastServerMessage(moveFaceServerMessage);
+						MainActivity.this.mMessagePool.recycleMessage(moveFaceServerMessage);
+					} catch (final IOException e) {
+						Debug.e(e);
+					}
+				}
+			}
+		}
+	
 	@Override
 	protected Dialog onCreateDialog(final int pID) {
 		switch(pID) {
@@ -341,7 +373,14 @@ public class MainActivity extends SimpleBaseGameActivity implements
 		if(this.mServerConnector != null) {
 			this.mServerConnector.terminate();
 		}
-
+		
+		//Anulujemy wszystkie dzia³aj¹ce timerysssssss
+		for(int i = 0; i < MainActivity.this.timersList.size(); i++) {
+		    Timer timer = MainActivity.this.timersList.valueAt(i);
+		    timer.cancel();
+		}
+		
+		
 		super.onDestroy();
 	}
 
@@ -373,11 +412,12 @@ public class MainActivity extends SimpleBaseGameActivity implements
 		fly.startFlying();
 	}
 
-	public void moveFace(final int pID, final float pX, final float pY) {
+	public void moveFace(final int pID, final byte pX, final byte pY) {
 		// Find and move the face. 
 		final Fly fly = this.mFaces.get(pID);
-		fly.mPhysicsHandler.setVelocityX(pX * fly.getSpeed());
-		fly.mPhysicsHandler.setVelocityY(pY * fly.getSpeed());
+		fly.setXYTurn(pX, pY);
+		//fly.mPhysicsHandler.setVelocityX(pX * fly.getSpeed());
+		//fly.mPhysicsHandler.setVelocityY(pY * fly.getSpeed());
 	}
 	
 	public void stopFly(final int pID, final float pX, final float pY) {
@@ -601,20 +641,20 @@ public class MainActivity extends SimpleBaseGameActivity implements
 
 	public static class MoveFaceServerMessage extends ServerMessage {
 		private int mID;
-		private float mX;
-		private float mY;
+		private byte mX;
+		private byte mY;
 
 		public MoveFaceServerMessage() {
 
 		}
 
-		public MoveFaceServerMessage(final int pID, final float pX, final float pY) {
+		public MoveFaceServerMessage(final int pID, final byte pX, final byte pY) {
 			this.mID = pID;
 			this.mX = pX;
 			this.mY = pY;
 		}
 
-		public void set(final int pID, final float pX, final float pY) {
+		public void set(final int pID, final byte pX, final byte pY) {
 			this.mID = pID;
 			this.mX = pX;
 			this.mY = pY;
@@ -628,15 +668,15 @@ public class MainActivity extends SimpleBaseGameActivity implements
 		@Override
 		protected void onReadTransmissionData(final DataInputStream pDataInputStream) throws IOException {
 			this.mID = pDataInputStream.readInt();
-			this.mX = pDataInputStream.readFloat();
-			this.mY = pDataInputStream.readFloat();
+			this.mX = pDataInputStream.readByte();
+			this.mY = pDataInputStream.readByte();
 		}
 
 		@Override
 		protected void onWriteTransmissionData(final DataOutputStream pDataOutputStream) throws IOException {
 			pDataOutputStream.writeInt(this.mID);
-			pDataOutputStream.writeFloat(this.mX);
-			pDataOutputStream.writeFloat(this.mY);
+			pDataOutputStream.writeByte(this.mX);
+			pDataOutputStream.writeByte(this.mY);
 		}
 	}
 	
@@ -753,6 +793,22 @@ public class MainActivity extends SimpleBaseGameActivity implements
 		//Log.v("X", Float.toString(startPosX));
 		//Log.v("Y", Float.toString(startPosY));
 		return coords;
+	}
+	
+	//losujemy czy zwrot obiektu ma byc zgodny czy przeciwny do osi.
+	private byte[] randomXYTurn() {
+		Random rand = new Random();
+		byte xTurn = (byte) rand.nextInt(2);
+		byte yTurn = (byte) rand.nextInt(2);
+		if (xTurn == 0) {
+			xTurn = -1;
+		}
+		if (yTurn == 0) {
+			yTurn = -1;
+		}
+		
+		byte[] xyTurns = {xTurn, yTurn};
+		return xyTurns;
 	}
 	 
 }

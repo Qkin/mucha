@@ -133,11 +133,11 @@ public class Fly extends AnimatedSprite {
 		if (this.isFlying()) {
 			// Warunek potrzebny, aby kierunek ruchy muchy nie byl zmieniany co
 			// kazda aktualizacje, tylko co konkretna liczbe uaktualnien
-			if (this.updateCounter > 10) {
+			/*if (this.updateCounter > 10) {
 				this.updateCounter = 0;
 				this.randomXYTurn();
 			}
-			this.updateCounter++;
+			this.updateCounter++;*/
 			
 			// ////////////////////////////////////////////////////////////////////////
 			// jesli obiekt chce przejsc poza granice ekranu to zmieniamy jego
