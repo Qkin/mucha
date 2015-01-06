@@ -401,8 +401,7 @@ public class CopyOfMainActivity extends SimpleBaseGameActivity implements
 		final Fly fly = new Fly(0, 0, resources.mFlyTextureRegion, this.getVertexBufferObjectManager(), pID);
 		fly.setCamera(CAMERA_WIDTH, CAMERA_HEIGHT);
 		//fly.setActivity(CopyOfMainActivity.this);
-		fly.randomStartPosition();
-		fly.setPosition(fly.startPosX - fly.getWidth() * 0.5f, fly.startPosY - fly.getHeight() * 0.5f);
+		//fly.setPosition(fly.startPosX - fly.getWidth() * 0.5f, fly.startPosY - fly.getHeight() * 0.5f);
 		fly.setUserData(pID);
 		this.mFaces.put(pID, fly);
 

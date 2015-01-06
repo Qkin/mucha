@@ -5,6 +5,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -168,8 +169,10 @@ public class MainActivity extends SimpleBaseGameActivity implements
 
 						if(MainActivity.this.mSocketServer != null) {
 							try {
+								float[] startPos = flyRandomStartPosition();
 								final AddFaceServerMessage addFaceServerMessage = (AddFaceServerMessage) MainActivity.this.mMessagePool.obtainMessage(FLAG_MESSAGE_SERVER_ADD_FACE);
-								addFaceServerMessage.set(MainActivity.this.mFaceIDCounter++, pSceneTouchEvent.getX(), pSceneTouchEvent.getY());
+								//addFaceServerMessage.set(MainActivity.this.mFaceIDCounter++, pSceneTouchEvent.getX(), pSceneTouchEvent.getY());
+								addFaceServerMessage.set(MainActivity.this.mFaceIDCounter++, startPos[0], startPos[1]);
 	
 								MainActivity.this.mSocketServer.sendBroadcastServerMessage(addFaceServerMessage);
 								MainActivity.this.mMessagePool.recycleMessage(addFaceServerMessage);
@@ -188,7 +191,7 @@ public class MainActivity extends SimpleBaseGameActivity implements
 				@Override
 				public boolean onAreaTouched(final TouchEvent pSceneTouchEvent, final ITouchArea pTouchArea, final float pTouchAreaLocalX, final float pTouchAreaLocalY) {
 					if(MainActivity.this.mSocketServer != null) {
-					/*	try {
+						/*try {
 							final Sprite fly = (Sprite)pTouchArea;
 							final Integer faceID = (Integer)fly.getUserData();
 							float x = fly.getX();
@@ -360,9 +363,7 @@ public class MainActivity extends SimpleBaseGameActivity implements
 		final Scene scene = this.mEngine.getScene();
 		final Fly fly = new Fly(0, 0, resources.mFlyTextureRegion, this.getVertexBufferObjectManager(), pID);
 		fly.setCamera(CAMERA_WIDTH, CAMERA_HEIGHT);
-		fly.setActivity(MainActivity.this);
-		fly.randomStartPosition();
-		fly.setPosition(fly.startPosX - fly.getWidth() * 0.5f, fly.startPosY - fly.getHeight() * 0.5f);
+		fly.setPosition(pX - fly.getWidth() * 0.5f, pY - fly.getHeight() * 0.5f);
 		fly.setUserData(pID);
 		this.mFaces.put(pID, fly);
 
@@ -684,12 +685,12 @@ public class MainActivity extends SimpleBaseGameActivity implements
 	private class ExampleServerConnectorListener implements ISocketConnectionServerConnectorListener {
 		@Override
 		public void onStarted(final ServerConnector<SocketConnection> pConnector) {
-			MainActivity.this.toast("CLIENT: Connected to server.");
+			//MainActivity.this.toast("CLIENT: Connected to server.");
 		}
 
 		@Override
 		public void onTerminated(final ServerConnector<SocketConnection> pConnector) {
-			MainActivity.this.toast("CLIENT: Disconnected from Server...");
+			//MainActivity.this.toast("CLIENT: Disconnected from Server...");
 			MainActivity.this.finish();
 		}
 	}
@@ -697,12 +698,12 @@ public class MainActivity extends SimpleBaseGameActivity implements
 	private class ExampleServerStateListener implements ISocketServerListener<SocketConnectionClientConnector> {
 		@Override
 		public void onStarted(final SocketServer<SocketConnectionClientConnector> pSocketServer) {
-			MainActivity.this.toast("SERVER: Started.");
+			//MainActivity.this.toast("SERVER: Started.");
 		}
 
 		@Override
 		public void onTerminated(final SocketServer<SocketConnectionClientConnector> pSocketServer) {
-			MainActivity.this.toast("SERVER: Terminated.");
+			//MainActivity.this.toast("SERVER: Terminated.");
 		}
 
 		@Override
@@ -720,8 +721,38 @@ public class MainActivity extends SimpleBaseGameActivity implements
 
 		@Override
 		public void onTerminated(final ClientConnector<SocketConnection> pConnector) {
-			MainActivity.this.toast("SERVER: Client disconnected: " + pConnector.getConnection().getSocket().getInetAddress().getHostAddress());
+			//MainActivity.this.toast("SERVER: Client disconnected: " + pConnector.getConnection().getSocket().getInetAddress().getHostAddress());
 		}
+	}
+	
+	//Losuje krawedz ekranu z ktorej ma startowac mucha i zwraca wspolrzedne w postaci tablicy 2 elementowej
+	private float[] flyRandomStartPosition() {
+		float startPosX = 0; 
+		float startPosY = 0;
+		Random rand = new Random(); 
+		int direction = rand.nextInt(4);
+		switch(direction) {
+			case 0: //lewa krawedz 
+				startPosX = 0;
+				startPosY = rand.nextInt(this.CAMERA_HEIGHT); 
+			break; 
+			case 1: // gorna krawedz 
+				startPosX = rand.nextInt(this.CAMERA_WIDTH); 
+				startPosY = 0;
+			break; 
+			case 2: // prawa krawedz 
+				startPosX = this.CAMERA_WIDTH; 
+				startPosY = rand.nextInt(this.CAMERA_HEIGHT);
+			break; 
+			case 3: //dolna krawedz 
+				startPosX = rand.nextInt(this.CAMERA_WIDTH); 
+				startPosY = this.CAMERA_HEIGHT; 
+			break; 
+		}
+		float[] coords = {startPosX, startPosY};
+		//Log.v("X", Float.toString(startPosX));
+		//Log.v("Y", Float.toString(startPosY));
+		return coords;
 	}
 	 
 }
