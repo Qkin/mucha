@@ -85,8 +85,9 @@ public class MainActivity extends SimpleBaseGameActivity implements
 	private static final int SERVER_PORT = 4444;
 
 	public static final short FLAG_MESSAGE_SERVER_ADD_FACE = 1;
-	public static final short FLAG_MESSAGE_SERVER_MOVE_FACE = FLAG_MESSAGE_SERVER_ADD_FACE + 1;
-	public static final short FLAG_MESSAGE_SERVER_STOP_FLY = FLAG_MESSAGE_SERVER_MOVE_FACE + 1;
+	public static final short FLAG_MESSAGE_SERVER_MOVE_FACE = 2;
+	public static final short FLAG_MESSAGE_SERVER_STOP_FLY = 3;
+	public static final short FLAG_MESSAGE_CLIENT_STOP_FLY = 4;
 
 	private static final int DIALOG_CHOOSE_SERVER_OR_CLIENT_ID = 0;
 	private static final int DIALOG_ENTER_SERVER_IP_ID = DIALOG_CHOOSE_SERVER_OR_CLIENT_ID + 1;
@@ -131,7 +132,8 @@ public class MainActivity extends SimpleBaseGameActivity implements
 	private void initMessagePool() {
 		this.mMessagePool.registerMessage(FLAG_MESSAGE_SERVER_ADD_FACE, AddFaceServerMessage.class);
 		this.mMessagePool.registerMessage(FLAG_MESSAGE_SERVER_MOVE_FACE, MoveFaceServerMessage.class);
-		//this.mMessagePool.registerMessage(FLAG_MESSAGE_SERVER_STOP_FLY, StopFlyServerMessage.class);
+		this.mMessagePool.registerMessage(FLAG_MESSAGE_CLIENT_STOP_FLY, StopFlyClientMessage.class);
+		this.mMessagePool.registerMessage(FLAG_MESSAGE_SERVER_STOP_FLY, StopFlyServerMessage.class);
 	}
 
 	@Override
@@ -218,6 +220,19 @@ public class MainActivity extends SimpleBaseGameActivity implements
 					if(MainActivity.this.mServerConnector != null) {
 						final Fly fly = (Fly)pTouchArea;
 						final Integer faceID = (Integer)fly.getUserData();
+						try {			
+				 			StopFlyClientMessage stopFlyClientMessage = (StopFlyClientMessage) MainActivity.this.mMessagePool.obtainMessage(FLAG_MESSAGE_CLIENT_STOP_FLY);
+				 			stopFlyClientMessage.set(faceID, pTouchAreaLocalX, pTouchAreaLocalY);
+							mServerConnector.sendClientMessage(stopFlyClientMessage);
+							MainActivity.this.mMessagePool.recycleMessage(stopFlyClientMessage);
+						} catch (IOException e) {
+							Debug.e(e);
+							return false;
+						}
+		              
+						
+						/*final Fly fly = (Fly)pTouchArea;
+						final Integer faceID = (Integer)fly.getUserData();
 						float x = fly.getX();
 						float y = fly.getY();
 						MainActivity.this.mFaces.remove(faceID);
@@ -228,7 +243,7 @@ public class MainActivity extends SimpleBaseGameActivity implements
 						face.setPosition( x,  y);
 						
 						scene.attachChild(face);
-						face.setZIndex(-1);
+						face.setZIndex(-1);*/
 						
 						
 						
@@ -269,9 +284,6 @@ public class MainActivity extends SimpleBaseGameActivity implements
 						byte[] xyTurns = randomXYTurn();
 						final MoveFaceServerMessage moveFaceServerMessage = (MoveFaceServerMessage) MainActivity.this.mMessagePool.obtainMessage(FLAG_MESSAGE_SERVER_MOVE_FACE);
 						moveFaceServerMessage.set(this.faceId, xyTurns[0], xyTurns[1]);				
-						Log.v("xT", Byte.toString(xyTurns[0]));
-						Log.v("yT", Byte.toString(xyTurns[1]));
-						Log.v("yT", Integer.toString(this.faceId));
 						MainActivity.this.mSocketServer.sendBroadcastServerMessage(moveFaceServerMessage);
 						MainActivity.this.mMessagePool.recycleMessage(moveFaceServerMessage);
 					} catch (final IOException e) {
@@ -374,7 +386,7 @@ public class MainActivity extends SimpleBaseGameActivity implements
 			this.mServerConnector.terminate();
 		}
 		
-		//Anulujemy wszystkie dzia³aj¹ce timerysssssss
+		//Anulujemy wszystkie dzia³aj¹ce timery
 		for(int i = 0; i < MainActivity.this.timersList.size(); i++) {
 		    Timer timer = MainActivity.this.timersList.valueAt(i);
 		    timer.cancel();
@@ -397,7 +409,20 @@ public class MainActivity extends SimpleBaseGameActivity implements
 	// ===========================================================
 	// Methods
 	// ===========================================================
-
+	
+	public void stopFlyServer(final int pID, final float pX, final float pY) {
+		if (MainActivity.this.mSocketServer != null) {
+			try {
+				final StopFlyServerMessage stopFlyServerMessage = (StopFlyServerMessage) MainActivity.this.mMessagePool.obtainMessage(FLAG_MESSAGE_SERVER_STOP_FLY);
+				stopFlyServerMessage.set(pID, pX, pY);				
+				MainActivity.this.mSocketServer.sendBroadcastServerMessage(stopFlyServerMessage);
+				MainActivity.this.mMessagePool.recycleMessage(stopFlyServerMessage);
+			} catch (final IOException e) {
+				Debug.e(e);
+			}
+		}
+	}
+	
 	public void addFace(final int pID, final float pX, final float pY) {
 		final Scene scene = this.mEngine.getScene();
 		final Fly fly = new Fly(0, 0, resources.mFlyTextureRegion, this.getVertexBufferObjectManager(), pID);
@@ -413,22 +438,21 @@ public class MainActivity extends SimpleBaseGameActivity implements
 	}
 
 	public void moveFace(final int pID, final byte pX, final byte pY) {
-		// Find and move the face. 
 		final Fly fly = this.mFaces.get(pID);
 		fly.setXYTurn(pX, pY);
-		//fly.mPhysicsHandler.setVelocityX(pX * fly.getSpeed());
-		//fly.mPhysicsHandler.setVelocityY(pY * fly.getSpeed());
 	}
 	
 	public void stopFly(final int pID, final float pX, final float pY) {
 		final Scene scene = this.mEngine.getScene();
 		final Fly fly = this.mFaces.get(pID);
+		float x = fly.getX();
+		float y = fly.getY();
 		fly.killTheFly();
 		this.mFaces.remove(pID);
 		fly.detachSelf();
 		
-		final Sprite deadFly = new Sprite(0, 0, resources.mDeadFlyTextureRegion, MainActivity.this.getVertexBufferObjectManager());
-		deadFly.setPosition(pX, pY);
+		final Sprite deadFly = new Sprite(x, y, resources.mDeadFlyTextureRegion, MainActivity.this.getVertexBufferObjectManager());
+		//deadFly.setPosition(x, y);
 		scene.attachChild(deadFly);
 		deadFly.setZIndex(-1);
 		
@@ -455,7 +479,6 @@ public class MainActivity extends SimpleBaseGameActivity implements
 	
 	private void initServerAndClient() {
 		this.initServer();
-
 		// Wait some time after the server has been started, so it actually can start up. 
 		try {
 			Thread.sleep(500);
@@ -472,12 +495,12 @@ public class MainActivity extends SimpleBaseGameActivity implements
                 protected SocketConnectionClientConnector newClientConnector(final SocketConnection pSocketConnection) throws IOException {
                         final SocketConnectionClientConnector clientConnector = new SocketConnectionClientConnector(pSocketConnection);
                         //clientConnector.registerClientMessage(5, pClientMessageClass);
-                        clientConnector.registerClientMessage(FLAG_MESSAGE_CLIENT_DRAWLINE, DrawLineClientMessage.class, new IClientMessageHandler<SocketConnection>() {
+                        clientConnector.registerClientMessage(FLAG_MESSAGE_CLIENT_DRAWLINE, StopFlyClientMessage.class, new IClientMessageHandler<SocketConnection>() {
 								@Override
 								public void onHandleMessage(ClientConnector<SocketConnection> pClientConnector,IClientMessage pClientMessage)
 									throws IOException {
-										final DrawLineClientMessage drawLineClientMessage = (DrawLineClientMessage)pClientMessage;
-										MainActivity.this.addFace(drawLineClientMessage.mID, drawLineClientMessage.mX, drawLineClientMessage.mY);
+										final StopFlyClientMessage stopFlyClientMessage = (StopFlyClientMessage)pClientMessage;
+										MainActivity.this.stopFlyServer(stopFlyClientMessage.mID, stopFlyClientMessage.mX, stopFlyClientMessage.mY);
 									}
 		                        });
                         return clientConnector;
@@ -524,13 +547,13 @@ public class MainActivity extends SimpleBaseGameActivity implements
 				}
 			});
 			
-			/*this.mServerConnector.registerServerMessage(FLAG_MESSAGE_SERVER_STOP_FLY, StopFlyServerMessage.class, new IServerMessageHandler<SocketConnection>() {
+			this.mServerConnector.registerServerMessage(FLAG_MESSAGE_SERVER_STOP_FLY, StopFlyServerMessage.class, new IServerMessageHandler<SocketConnection>() {
 				@Override
 				public void onHandleMessage(final ServerConnector<SocketConnection> pServerConnector, final IServerMessage pServerMessage) throws IOException {
 					final StopFlyServerMessage stopFlyServerMessage = (StopFlyServerMessage)pServerMessage;
 					MainActivity.this.stopFly(stopFlyServerMessage.mID, stopFlyServerMessage.mX, stopFlyServerMessage.mY);
 				}
-			});*/
+			});
 
 			this.mServerConnector.getConnection().start();
 		} catch (final Throwable t) {
@@ -557,16 +580,16 @@ public class MainActivity extends SimpleBaseGameActivity implements
 	// ===========================================================
 	private  static final short FLAG_MESSAGE_CLIENT_DRAWLINE = 5;
 	
-	public static class DrawLineClientMessage extends ClientMessage {
+	public static class StopFlyClientMessage extends ClientMessage {
 		private int mID;
 		private float mX;
 		private float mY;
 
-		public DrawLineClientMessage() {
+		public StopFlyClientMessage() {
 
 		}
 
-		public DrawLineClientMessage(final int pID, final float pX, final float pY) {
+		public StopFlyClientMessage(final int pID, final float pX, final float pY) {
 			this.mID = pID;
 			this.mX = pX;
 			this.mY = pY;
@@ -795,11 +818,12 @@ public class MainActivity extends SimpleBaseGameActivity implements
 		return coords;
 	}
 	
-	//losujemy czy zwrot obiektu ma byc zgodny czy przeciwny do osi.
+	//losujemy czy zwrot muchy ma byc zgodny czy przeciwny do osi.
 	private byte[] randomXYTurn() {
 		Random rand = new Random();
 		byte xTurn = (byte) rand.nextInt(2);
 		byte yTurn = (byte) rand.nextInt(2);
+		
 		if (xTurn == 0) {
 			xTurn = -1;
 		}

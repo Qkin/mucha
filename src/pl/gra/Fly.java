@@ -22,7 +22,7 @@ import android.util.Log;
 public class Fly extends AnimatedSprite {
 	public final PhysicsHandler mPhysicsHandler;
 	// prędkość poruszania się muchy ( gdy wartość ujemna, prędkość przybiera przeciwny zwrot)
-	public float velocity = 150.0f;
+	public float velocity = 0.0f;
 	//szerokość i wysokość ekranu
 	private int cameraWidth = 720;
 	private int cameraHeight = 480;
