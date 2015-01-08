@@ -10,6 +10,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import org.andengine.audio.music.Music;
+import org.andengine.audio.music.MusicManager;
 import org.andengine.engine.camera.Camera;
 import org.andengine.engine.camera.hud.HUD;
 import org.andengine.engine.options.EngineOptions;
@@ -102,6 +103,7 @@ public class MainActivity extends SimpleBaseGameActivity implements
 
 	private int mFaceIDCounter;
 	private final SparseArray<Fly> mFaces = new SparseArray<Fly>();
+	private final SparseArray<Byte> mFacesExec = new SparseArray<Byte>();
 	private final SparseArray<Timer> timersList = new SparseArray<Timer>();
 
 	private String mServerIP = LOCALHOST_IP;
@@ -118,8 +120,8 @@ public class MainActivity extends SimpleBaseGameActivity implements
 	private int score;
 	private Camera camera;
 	
-	private BitmapTextureAtlas mBitmapTextureAtlas;
-	private ITextureRegion mFaceTextureRegion;
+	//private Music mMusic;
+	//private MusicManager musicManager;
 	
 	// ===========================================================
 	// Constructors
@@ -149,14 +151,8 @@ public class MainActivity extends SimpleBaseGameActivity implements
 	public void onCreateResources() {
 		resources = new Resources();
 		resources.loadGameGraphics(this);
+
 		// resources.loadFonts(this);
-		
-		BitmapTextureAtlasTextureRegionFactory.setAssetBasePath("gfx/");
-
-		this.mBitmapTextureAtlas = new BitmapTextureAtlas(this.getTextureManager(), 32, 32, TextureOptions.BILINEAR);
-		this.mFaceTextureRegion = BitmapTextureAtlasTextureRegionFactory.createFromAsset(this.mBitmapTextureAtlas, this, "face_box.png", 0, 0);
-
-		this.mBitmapTextureAtlas.load();
 	}
 	
 	@Override
@@ -200,64 +196,24 @@ public class MainActivity extends SimpleBaseGameActivity implements
 				@Override
 				public boolean onAreaTouched(final TouchEvent pSceneTouchEvent, final ITouchArea pTouchArea, final float pTouchAreaLocalX, final float pTouchAreaLocalY) {
 					if(MainActivity.this.mSocketServer != null) {
-						/*try {
-							final Sprite fly = (Sprite)pTouchArea;
-							final Integer faceID = (Integer)fly.getUserData();
-							float x = fly.getX();
-							float y = fly.getY();
-		
-							final StopFlyServerMessage stopFlyServerMessage = (StopFlyServerMessage) MainActivity.this.mMessagePool.obtainMessage(FLAG_MESSAGE_SERVER_STOP_FLY);
-							stopFlyServerMessage.set(faceID, x, y);
 
-							MainActivity.this.mSocketServer.sendBroadcastServerMessage(stopFlyServerMessage);
-							MainActivity.this.mMessagePool.recycleMessage(stopFlyServerMessage);
-						} catch (final IOException e) {
-							Debug.e(e);
-							return false;
-						}*/
 					}
 					
 					if(MainActivity.this.mServerConnector != null) {
 						final Fly fly = (Fly)pTouchArea;
 						final Integer faceID = (Integer)fly.getUserData();
-						try {			
-				 			StopFlyClientMessage stopFlyClientMessage = (StopFlyClientMessage) MainActivity.this.mMessagePool.obtainMessage(FLAG_MESSAGE_CLIENT_STOP_FLY);
-				 			stopFlyClientMessage.set(faceID, pTouchAreaLocalX, pTouchAreaLocalY);
-							mServerConnector.sendClientMessage(stopFlyClientMessage);
-							MainActivity.this.mMessagePool.recycleMessage(stopFlyClientMessage);
-						} catch (IOException e) {
-							Debug.e(e);
-							return false;
+						if(MainActivity.this.mFacesExec.get(faceID) != null) {
+							MainActivity.this.mFacesExec.remove(faceID);
+							try {			
+					 			StopFlyClientMessage stopFlyClientMessage = (StopFlyClientMessage) MainActivity.this.mMessagePool.obtainMessage(FLAG_MESSAGE_CLIENT_STOP_FLY);
+					 			stopFlyClientMessage.set(faceID, pTouchAreaLocalX, pTouchAreaLocalY);
+								mServerConnector.sendClientMessage(stopFlyClientMessage);
+								MainActivity.this.mMessagePool.recycleMessage(stopFlyClientMessage);
+							} catch (IOException e) {
+								Debug.e(e);
+								return false;
+							}
 						}
-		              
-						
-						/*final Fly fly = (Fly)pTouchArea;
-						final Integer faceID = (Integer)fly.getUserData();
-						float x = fly.getX();
-						float y = fly.getY();
-						MainActivity.this.mFaces.remove(faceID);
-						fly.killTheFly();
-						fly.detachSelf();
-						
-						final Sprite face = new Sprite(0, 0, resources.mDeadFlyTextureRegion, MainActivity.this.getVertexBufferObjectManager());
-						face.setPosition( x,  y);
-						
-						scene.attachChild(face);
-						face.setZIndex(-1);*/
-						
-						
-						
-					/*	final Fly deadFly = new Fly(0, 0, resources.mDeadFlyTextureRegion, MainActivity.this.getVertexBufferObjectManager(), MainActivity.this.mFaceIDCounter++);
-						deadFly.setCamera(CAMERA_WIDTH, CAMERA_HEIGHT);
-						deadFly.setPosition(pSceneTouchEvent.getX() - deadFly.getWidth() * 0.5f, pSceneTouchEvent.getY() - deadFly.getHeight() * 0.5f);
-						scene.attachChild(deadFly);
-						*/
-						//Co ma robiæ klient
-						/* Create the face and add it to the scene. */
-						//final Sprite face = new Sprite(0, 0, MainActivity.this.mFaceTextureRegion, MainActivity.this.getVertexBufferObjectManager());
-						//face.setPosition( pSceneTouchEvent.getX() - face.getWidth() * 0.5f,  pSceneTouchEvent.getY() - face.getHeight() * 0.5f);
-						//scene.registerTouchArea(face);
-						//scene.attachChild(face);
 					}
 					
 					
@@ -411,26 +367,33 @@ public class MainActivity extends SimpleBaseGameActivity implements
 	// ===========================================================
 	
 	public void stopFlyServer(final int pID, final float pX, final float pY) {
-		if (MainActivity.this.mSocketServer != null) {
+		if(MainActivity.this.timersList.get(pID) != null) {
+			final Timer timer = MainActivity.this.timersList.get(pID);
+			MainActivity.this.timersList.remove(pID);
+			timer.cancel();
+			timer.purge();
+			
 			try {
 				final StopFlyServerMessage stopFlyServerMessage = (StopFlyServerMessage) MainActivity.this.mMessagePool.obtainMessage(FLAG_MESSAGE_SERVER_STOP_FLY);
-				stopFlyServerMessage.set(pID, pX, pY);				
+				stopFlyServerMessage.set(pID, pX, pY);
 				MainActivity.this.mSocketServer.sendBroadcastServerMessage(stopFlyServerMessage);
 				MainActivity.this.mMessagePool.recycleMessage(stopFlyServerMessage);
+				
 			} catch (final IOException e) {
 				Debug.e(e);
 			}
 		}
+		
 	}
 	
 	public void addFace(final int pID, final float pX, final float pY) {
 		final Scene scene = this.mEngine.getScene();
-		final Fly fly = new Fly(0, 0, resources.mFlyTextureRegion, this.getVertexBufferObjectManager(), pID);
+		final Fly fly = new Fly(0, 0, resources.mFlyTextureRegion, MainActivity.this.getVertexBufferObjectManager(), pID);
 		fly.setCamera(CAMERA_WIDTH, CAMERA_HEIGHT);
 		fly.setPosition(pX - fly.getWidth() * 0.5f, pY - fly.getHeight() * 0.5f);
 		fly.setUserData(pID);
-		this.mFaces.put(pID, fly);
-
+		MainActivity.this.mFaces.put(pID, fly);
+		MainActivity.this.mFacesExec.put(pID, (byte)1);
 		scene.registerTouchArea(fly);
 		scene.attachChild(fly);
 		fly.setSpeed(100);
@@ -443,34 +406,25 @@ public class MainActivity extends SimpleBaseGameActivity implements
 	}
 	
 	public void stopFly(final int pID, final float pX, final float pY) {
-		final Scene scene = this.mEngine.getScene();
-		final Fly fly = this.mFaces.get(pID);
-		float x = fly.getX();
-		float y = fly.getY();
-		fly.killTheFly();
-		this.mFaces.remove(pID);
-		fly.detachSelf();
+		final Scene scene = MainActivity.this.mEngine.getScene();
+		if(MainActivity.this.mFaces.get(pID) != null) {
+			final Fly fly = MainActivity.this.mFaces.get(pID);
+			MainActivity.this.mFaces.remove(pID);
+			float x = fly.getX();
+			float y = fly.getY();
+			fly.killTheFly();
+			fly.detachSelf();
+			
+			//dodanie do sceny gry grafiki dla nie¿ywej muchy
+			final Sprite deadFly = new Sprite(x, y, resources.mDeadFlyTextureRegion, MainActivity.this.getVertexBufferObjectManager());
+			scene.attachChild(deadFly);
+			deadFly.setZIndex(-1);
+		}
 		
-		final Sprite deadFly = new Sprite(x, y, resources.mDeadFlyTextureRegion, MainActivity.this.getVertexBufferObjectManager());
-		//deadFly.setPosition(x, y);
-		scene.attachChild(deadFly);
-		deadFly.setZIndex(-1);
-		
-		//final Fly face = this.mFaces.get(pID);
-		// CopyOfMainActivity.this.toast("tekst");
-		//face.killTheFly();
-		//this.mFaces.remove(pID);
-		
-		//face.detachSelf();
+
 		//ustawienie pozycji na osiach X i Y dla nie¿ywej muchy
 		//float x = face.getX();
 		//float y = face.getY() + face.getHeight()/2;
-		//final Sprite deadFly = new Sprite(x, y, resources.mDeadFlyTextureRegion, this.getVertexBufferObjectManager());
-
-		//dodanie do sceny gry grafiki dla nie¿ywej muchy
-
-		// float x = face.getX();
-		// float y = face.getY() + face.getHeight()/2;
 
 		//final Sprite deadFly = new Sprite(pX, pY, resources.mDeadFlyTextureRegion, this.getVertexBufferObjectManager());
 		//deadFly.setPosition(pX - face.getWidth() * 0.5f, pY - face.getHeight()* 0.5f);
@@ -797,19 +751,19 @@ public class MainActivity extends SimpleBaseGameActivity implements
 		switch(direction) {
 			case 0: //lewa krawedz 
 				startPosX = 0;
-				startPosY = rand.nextInt(this.CAMERA_HEIGHT); 
+				startPosY = rand.nextInt(MainActivity.CAMERA_HEIGHT); 
 			break; 
 			case 1: // gorna krawedz 
-				startPosX = rand.nextInt(this.CAMERA_WIDTH); 
+				startPosX = rand.nextInt(MainActivity.CAMERA_WIDTH); 
 				startPosY = 0;
 			break; 
 			case 2: // prawa krawedz 
-				startPosX = this.CAMERA_WIDTH; 
-				startPosY = rand.nextInt(this.CAMERA_HEIGHT);
+				startPosX = MainActivity.CAMERA_WIDTH; 
+				startPosY = rand.nextInt(MainActivity.CAMERA_HEIGHT);
 			break; 
 			case 3: //dolna krawedz 
-				startPosX = rand.nextInt(this.CAMERA_WIDTH); 
-				startPosY = this.CAMERA_HEIGHT; 
+				startPosX = rand.nextInt(MainActivity.CAMERA_WIDTH); 
+				startPosY = MainActivity.CAMERA_HEIGHT; 
 			break; 
 		}
 		float[] coords = {startPosX, startPosY};
