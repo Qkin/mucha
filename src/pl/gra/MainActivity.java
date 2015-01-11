@@ -200,8 +200,11 @@ public class MainActivity extends SimpleBaseGameActivity implements
 					}
 					
 					if(MainActivity.this.mServerConnector != null) {
+						
 						final Fly fly = (Fly)pTouchArea;
 						final Integer faceID = (Integer)fly.getUserData();
+						
+						//warunek pomoga uniknac kilkukrotnego wykonania instrukcji po 1 nacisnieciu
 						if(MainActivity.this.mFacesExec.get(faceID) != null) {
 							MainActivity.this.mFacesExec.remove(faceID);
 							try {			
@@ -367,6 +370,7 @@ public class MainActivity extends SimpleBaseGameActivity implements
 	// ===========================================================
 	
 	public void stopFlyServer(final int pID, final float pX, final float pY) {
+		
 		if(MainActivity.this.timersList.get(pID) != null) {
 			final Timer timer = MainActivity.this.timersList.get(pID);
 			MainActivity.this.timersList.remove(pID);
@@ -418,7 +422,7 @@ public class MainActivity extends SimpleBaseGameActivity implements
 			//dodanie do sceny gry grafiki dla nie¿ywej muchy
 			final Sprite deadFly = new Sprite(x, y, resources.mDeadFlyTextureRegion, MainActivity.this.getVertexBufferObjectManager());
 			scene.attachChild(deadFly);
-			deadFly.setZIndex(-1);
+			
 		}
 		
 
@@ -449,7 +453,7 @@ public class MainActivity extends SimpleBaseGameActivity implements
                 protected SocketConnectionClientConnector newClientConnector(final SocketConnection pSocketConnection) throws IOException {
                         final SocketConnectionClientConnector clientConnector = new SocketConnectionClientConnector(pSocketConnection);
                         //clientConnector.registerClientMessage(5, pClientMessageClass);
-                        clientConnector.registerClientMessage(FLAG_MESSAGE_CLIENT_DRAWLINE, StopFlyClientMessage.class, new IClientMessageHandler<SocketConnection>() {
+                        clientConnector.registerClientMessage(FLAG_MESSAGE_CLIENT_STOP_FLY, StopFlyClientMessage.class, new IClientMessageHandler<SocketConnection>() {
 								@Override
 								public void onHandleMessage(ClientConnector<SocketConnection> pClientConnector,IClientMessage pClientMessage)
 									throws IOException {
@@ -532,7 +536,6 @@ public class MainActivity extends SimpleBaseGameActivity implements
 	// ===========================================================
 	// Inner and Anonymous Classes
 	// ===========================================================
-	private  static final short FLAG_MESSAGE_CLIENT_DRAWLINE = 5;
 	
 	public static class StopFlyClientMessage extends ClientMessage {
 		private int mID;
@@ -557,7 +560,7 @@ public class MainActivity extends SimpleBaseGameActivity implements
 
 		@Override
 		public short getFlag() {
-			return FLAG_MESSAGE_CLIENT_DRAWLINE;
+			return FLAG_MESSAGE_CLIENT_STOP_FLY;
 		}
 
 		@Override
